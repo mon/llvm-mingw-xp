@@ -1,0 +1,451 @@
+diff --git a/compiler-rt/lib/builtins/emutls.c b/compiler-rt/lib/builtins/emutls.c
+index 390ffb25f..bd70eb419 100644
+--- a/compiler-rt/lib/builtins/emutls.c
++++ b/compiler-rt/lib/builtins/emutls.c
+@@ -45,7 +45,7 @@ typedef struct emutls_address_array {
+ 
+ static void emutls_shutdown(emutls_address_array *array);
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) || defined(_COMPILER_RT_HAS_THREAD_API_PTHREAD)
+ 
+ #include <pthread.h>
+ 
+diff --git a/libcxx/include/__locale_dir/support/windows.h b/libcxx/include/__locale_dir/support/windows.h
+index 0df8709f1..954b29d8b 100644
+--- a/libcxx/include/__locale_dir/support/windows.h
++++ b/libcxx/include/__locale_dir/support/windows.h
+@@ -147,6 +147,32 @@ public:
+     return __lc_->__get();
+   }
+ 
++  // XP hackjob
++  template<typename _T, typename _F, typename... _Args>
++  _T __wrap_call(int __category, _F fn, _Args&&... args) {
++    char* __old_locale = ::setlocale(__category, nullptr);
++    if (__old_locale == nullptr)
++      std::__throw_bad_alloc();
++
++    // only change the locale if the one we're using is sane and different
++    bool __did_change = false;
++    if (__locale_str_ && strcmp(__locale_str_, __old_locale) != 0) {
++      __did_change = true;
++      __old_locale = strdup(__old_locale);
++      if (__old_locale == nullptr)
++        std::__throw_bad_alloc();
++    }
++
++    _T ret = fn(std::forward<_Args>(args)...);
++
++    if (__did_change) {
++      ::setlocale(__category, __old_locale);
++      free(__old_locale);
++    }
++
++    return ret;
++  }
++
+ private:
+   ::_locale_t __locale_;
+   const char* __locale_str_;
+@@ -172,10 +198,10 @@ _LIBCPP_EXPORTED_FROM_ABI __lconv_t* __localeconv(__locale_t& __loc);
+ // the *_l functions are prefixed on Windows, only available for msvcr80+, VS2005+
+ #if defined(_LIBCPP_MSVCRT)
+ inline _LIBCPP_HIDE_FROM_ABI float __strtof(const char* __nptr, char** __endptr, __locale_t __loc) {
+-  return ::_strtof_l(__nptr, __endptr, __loc);
++  return __loc.__wrap_call<float>(LC_NUMERIC, ::strtof, __nptr, __endptr);
+ }
+ inline _LIBCPP_HIDE_FROM_ABI long double __strtold(const char* __nptr, char** __endptr, __locale_t __loc) {
+-  return ::_strtold_l(__nptr, __endptr, __loc);
++  return __loc.__wrap_call<long double>(LC_NUMERIC, ::strtold, __nptr, __endptr);
+ }
+ #else
+ _LIBCPP_EXPORTED_FROM_ABI float __strtof(const char*, char**, __locale_t);
+@@ -183,61 +209,61 @@ _LIBCPP_EXPORTED_FROM_ABI long double __strtold(const char*, char**, __locale_t)
+ #endif
+ 
+ inline _LIBCPP_HIDE_FROM_ABI double __strtod(const char* __nptr, char** __endptr, __locale_t __loc) {
+-  return ::_strtod_l(__nptr, __endptr, __loc);
++  return __loc.__wrap_call<double>(LC_NUMERIC, ::strtod, __nptr, __endptr);
+ }
+ 
+ inline _LIBCPP_HIDE_FROM_ABI long long __strtoll(const char* __nptr, char** __endptr, int __base, __locale_t __loc) {
+-  return ::_strtoi64_l(__nptr, __endptr, __base, __loc);
++  return __loc.__wrap_call<long long>(LC_NUMERIC, ::_strtoi64, __nptr, __endptr, __base);
+ }
+ inline _LIBCPP_HIDE_FROM_ABI unsigned long long
+ __strtoull(const char* __nptr, char** __endptr, int __base, __locale_t __loc) {
+-  return ::_strtoui64_l(__nptr, __endptr, __base, __loc);
++  return __loc.__wrap_call<unsigned long long>(LC_NUMERIC, ::_strtoui64, __nptr, __endptr, __base);
+ }
+ 
+ //
+ // Character manipulation functions
+ //
+-inline _LIBCPP_HIDE_FROM_ABI int __isdigit(int __c, __locale_t __loc) { return _isdigit_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __isdigit(int __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, isdigit, __c); }
+ 
+-inline _LIBCPP_HIDE_FROM_ABI int __isxdigit(int __c, __locale_t __loc) { return _isxdigit_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __isxdigit(int __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, isxdigit, __c); }
+ 
+ #if defined(_LIBCPP_BUILDING_LIBRARY)
+-inline _LIBCPP_HIDE_FROM_ABI int __toupper(int __c, __locale_t __loc) { return ::_toupper_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __toupper(int __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::toupper, __c); }
+ 
+-inline _LIBCPP_HIDE_FROM_ABI int __tolower(int __c, __locale_t __loc) { return ::_tolower_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __tolower(int __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::tolower, __c); }
+ 
+ inline _LIBCPP_HIDE_FROM_ABI int __strcoll(const char* __s1, const char* __s2, __locale_t __loc) {
+-  return ::_strcoll_l(__s1, __s2, __loc);
++  return __loc.__wrap_call<int>(LC_COLLATE, ::strcoll, __s1, __s2);
+ }
+ 
+ inline _LIBCPP_HIDE_FROM_ABI size_t __strxfrm(char* __dest, const char* __src, size_t __n, __locale_t __loc) {
+-  return ::_strxfrm_l(__dest, __src, __n, __loc);
++  return __loc.__wrap_call<size_t>(LC_COLLATE, ::strxfrm, __dest, __src, __n);
+ }
+ 
+ #  if _LIBCPP_HAS_WIDE_CHARACTERS
+ inline _LIBCPP_HIDE_FROM_ABI int __iswctype(wint_t __c, wctype_t __type, __locale_t __loc) {
+-  return ::_iswctype_l(__c, __type, __loc);
++  return __loc.__wrap_call<int>(LC_CTYPE, ::iswctype, __c, __type);
+ }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswspace(wint_t __c, __locale_t __loc) { return ::_iswspace_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswprint(wint_t __c, __locale_t __loc) { return ::_iswprint_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswcntrl(wint_t __c, __locale_t __loc) { return ::_iswcntrl_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswupper(wint_t __c, __locale_t __loc) { return ::_iswupper_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswlower(wint_t __c, __locale_t __loc) { return ::_iswlower_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswalpha(wint_t __c, __locale_t __loc) { return ::_iswalpha_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswspace(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswspace, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswprint(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswprint, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswcntrl(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswcntrl, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswupper(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswupper, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswlower(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswlower, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswalpha(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswalpha, __c); }
+ // TODO: use locale to determine blank characters
+ inline _LIBCPP_HIDE_FROM_ABI int __iswblank(wint_t __c, __locale_t /*loc*/) { return (__c == L' ' || __c == L'\t'); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswdigit(wint_t __c, __locale_t __loc) { return ::_iswdigit_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswpunct(wint_t __c, __locale_t __loc) { return ::_iswpunct_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI int __iswxdigit(wint_t __c, __locale_t __loc) { return ::_iswxdigit_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI wint_t __towupper(wint_t __c, __locale_t __loc) { return ::_towupper_l(__c, __loc); }
+-inline _LIBCPP_HIDE_FROM_ABI wint_t __towlower(wint_t __c, __locale_t __loc) { return ::_towlower_l(__c, __loc); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswdigit(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswdigit, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswpunct(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswpunct, __c); }
++inline _LIBCPP_HIDE_FROM_ABI int __iswxdigit(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<int>(LC_CTYPE, ::iswxdigit, __c); }
++inline _LIBCPP_HIDE_FROM_ABI wint_t __towupper(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<wint_t>(LC_CTYPE, ::towupper, __c); }
++inline _LIBCPP_HIDE_FROM_ABI wint_t __towlower(wint_t __c, __locale_t __loc) { return __loc.__wrap_call<wint_t>(LC_CTYPE, ::towlower, __c); }
+ 
+ inline _LIBCPP_HIDE_FROM_ABI int __wcscoll(const wchar_t* __ws1, const wchar_t* __ws2, __locale_t __loc) {
+-  return ::_wcscoll_l(__ws1, __ws2, __loc);
++  return __loc.__wrap_call<int>(LC_COLLATE, ::wcscoll, __ws1, __ws2);
+ }
+ 
+ inline _LIBCPP_HIDE_FROM_ABI size_t __wcsxfrm(wchar_t* __dest, const wchar_t* __src, size_t __n, __locale_t __loc) {
+-  return ::_wcsxfrm_l(__dest, __src, __n, __loc);
++  return __loc.__wrap_call<size_t>(LC_COLLATE, ::wcsxfrm, __dest, __src, __n);
+ }
+ #  endif // _LIBCPP_HAS_WIDE_CHARACTERS
+ 
+@@ -246,7 +272,7 @@ _LIBCPP_EXPORTED_FROM_ABI size_t __strftime(char*, size_t, const char*, const st
+ #  else
+ inline _LIBCPP_HIDE_FROM_ABI size_t
+ __strftime(char* __ret, size_t __n, const char* __format, const struct tm* __tm, __locale_t __loc) {
+-  return ::_strftime_l(__ret, __n, __format, __tm, __loc);
++  return __loc.__wrap_call<size_t>(LC_TIME, ::strftime, __ret, __n, __format, __tm);
+ }
+ #  endif
+ 
+@@ -265,7 +291,7 @@ _LIBCPP_EXPORTED_FROM_ABI size_t
+ __mbrtowc(wchar_t* __restrict, const char* __restrict, size_t, mbstate_t* __restrict, __locale_t);
+ 
+ inline _LIBCPP_HIDE_FROM_ABI int __mbtowc(wchar_t* __pwc, const char* __pmb, size_t __max, __locale_t __loc) {
+-  return ::_mbtowc_l(__pwc, __pmb, __max, __loc);
++  return __loc.__wrap_call<int>(LC_CTYPE, ::mbtowc, __pwc, __pmb, __max);
+ }
+ 
+ _LIBCPP_EXPORTED_FROM_ABI size_t __mbrlen(const char* __restrict, size_t, mbstate_t* __restrict, __locale_t);
+@@ -292,7 +318,7 @@ _LIBCPP_GCC_DIAGNOSTIC_IGNORED("-Wformat-nonliteral") // GCC doesn't support [[g
+ template <class... _Args>
+ _LIBCPP_HIDE_FROM_ABI _LIBCPP_VARIADIC_ATTRIBUTE_FORMAT(__scanf__, 3, 4) int __sscanf(
+     const char* __dest, __locale_t __loc, const char* __format, _Args&&... __args) {
+-  return ::_sscanf_l(__dest, __format, __loc, std::forward<_Args>(__args)...);
++  return __loc.__wrap_call<int>(LC_NUMERIC, ::sscanf, __dest, __format, std::forward<_Args>(__args)...);
+ }
+ _LIBCPP_DIAGNOSTIC_POP
+ #undef _LIBCPP_VARIADIC_ATTRIBUTE_FORMAT
+diff --git a/libcxx/src/filesystem/posix_compat.h b/libcxx/src/filesystem/posix_compat.h
+index ddd99d8aa..000a79958 100644
+--- a/libcxx/src/filesystem/posix_compat.h
++++ b/libcxx/src/filesystem/posix_compat.h
+@@ -147,32 +147,32 @@ private:
+ };
+ 
+ inline int stat_handle(HANDLE h, StatT* buf) {
+-  FILE_BASIC_INFO basic;
+-  if (!GetFileInformationByHandleEx(h, FileBasicInfo, &basic, sizeof(basic)))
++  BY_HANDLE_FILE_INFORMATION basic;
++  if (!GetFileInformationByHandle(h, &basic))
+     return -1;
+   memset(buf, 0, sizeof(*buf));
+-  buf->st_mtim = filetime_to_timespec(basic.LastWriteTime);
+-  buf->st_atim = filetime_to_timespec(basic.LastAccessTime);
++  buf->st_mtim = filetime_to_timespec(basic.ftLastWriteTime);
++  buf->st_atim = filetime_to_timespec(basic.ftLastAccessTime);
+   buf->st_mode = 0555; // Read-only
+-  if (!(basic.FileAttributes & FILE_ATTRIBUTE_READONLY))
++  if (!(basic.dwFileAttributes & FILE_ATTRIBUTE_READONLY))
+     buf->st_mode |= 0222; // Write
+-  if (basic.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
++  if (basic.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+     buf->st_mode |= _S_IFDIR;
+   } else {
+     buf->st_mode |= _S_IFREG;
+   }
+-  if (basic.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+-    FILE_ATTRIBUTE_TAG_INFO tag;
+-    if (!GetFileInformationByHandleEx(h, FileAttributeTagInfo, &tag, sizeof(tag)))
++  if (basic.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
++    LIBCPP_REPARSE_DATA_BUFFER tag;
++    if (!DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, nullptr, 0, &tag, sizeof(tag), nullptr, nullptr))
+       return -1;
+     if (tag.ReparseTag == IO_REPARSE_TAG_SYMLINK)
+       buf->st_mode = (buf->st_mode & ~_S_IFMT) | _S_IFLNK;
+   }
+-  FILE_STANDARD_INFO standard;
+-  if (!GetFileInformationByHandleEx(h, FileStandardInfo, &standard, sizeof(standard)))
+-    return -1;
+-  buf->st_nlink = standard.NumberOfLinks;
+-  buf->st_size  = standard.EndOfFile.QuadPart;
++  buf->st_nlink = basic.nNumberOfLinks;
++  LARGE_INTEGER st_size;
++  st_size.LowPart = basic.nFileSizeLow;
++  st_size.HighPart = basic.nFileSizeHigh;
++  buf->st_size  = st_size.QuadPart;
+   BY_HANDLE_FILE_INFORMATION info;
+   if (!GetFileInformationByHandle(h, &info))
+     return -1;
+@@ -207,18 +207,19 @@ inline int mkdir(const wchar_t* path, int permissions) {
+ }
+ 
+ inline int symlink_file_dir(const wchar_t* oldname, const wchar_t* newname, bool is_dir) {
+-  path dest(oldname);
+-  dest.make_preferred();
+-  oldname     = dest.c_str();
+-  DWORD flags = is_dir ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+-  if (CreateSymbolicLinkW(newname, oldname, flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE))
+-    return 0;
+-  int e = GetLastError();
+-  if (e != ERROR_INVALID_PARAMETER)
+-    return -1;
+-  if (CreateSymbolicLinkW(newname, oldname, flags))
+-    return 0;
+   return -1;
++  // path dest(oldname);
++  // dest.make_preferred();
++  // oldname     = dest.c_str();
++  // DWORD flags = is_dir ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
++  // if (CreateSymbolicLinkW(newname, oldname, flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE))
++  //   return 0;
++  // int e = GetLastError();
++  // if (e != ERROR_INVALID_PARAMETER)
++  //   return -1;
++  // if (CreateSymbolicLinkW(newname, oldname, flags))
++  //   return 0;
++  // return -1;
+ }
+ 
+ inline int symlink_file(const wchar_t* oldname, const wchar_t* newname) {
+@@ -236,14 +237,18 @@ inline int link(const wchar_t* oldname, const wchar_t* newname) {
+ }
+ 
+ inline int remove(const wchar_t* path) {
+-  detail::WinHandle h(path, DELETE, FILE_FLAG_OPEN_REPARSE_POINT);
+-  if (!h)
+-    return -1;
+-  FILE_DISPOSITION_INFO info;
+-  info.DeleteFile = TRUE;
+-  if (!SetFileInformationByHandle(h, FileDispositionInfo, &info, sizeof(info)))
++  if (!DeleteFileW(path))
+     return -1;
+   return 0;
++  // TODO: NtSetInformationFile ?
++  // detail::WinHandle h(path, DELETE, FILE_FLAG_OPEN_REPARSE_POINT);
++  // if (!h)
++  //   return -1;
++  // FILE_DISPOSITION_INFO info;
++  // info.DeleteFile = TRUE;
++  // if (!SetFileInformationByHandle(h, FileDispositionInfo, &info, sizeof(info)))
++  //   return -1;
++  // return 0;
+ }
+ 
+ inline int truncate_handle(HANDLE h, off_t length) {
+@@ -332,34 +337,36 @@ inline wchar_t* getcwd([[maybe_unused]] wchar_t* in_buf, [[maybe_unused]] size_t
+ }
+ 
+ inline wchar_t* realpath(const wchar_t* path, [[maybe_unused]] wchar_t* resolved_name) {
+-  // Only expected to be used with us allocating the buffer.
+-  _LIBCPP_ASSERT_INTERNAL(resolved_name == nullptr, "Windows realpath() assumes a null resolved_name");
+-
+-  WinHandle h(path, FILE_READ_ATTRIBUTES, 0);
+-  if (!h) {
+-    return nullptr;
+-  }
+-  size_t buff_size = MAX_PATH + 10;
+-  std::unique_ptr<wchar_t, decltype(&::free)> buff(static_cast<wchar_t*>(malloc(buff_size * sizeof(wchar_t))), &::free);
+-  DWORD retval = GetFinalPathNameByHandleW(h, buff.get(), buff_size, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+-  if (retval > buff_size) {
+-    buff_size = retval;
+-    buff.reset(static_cast<wchar_t*>(malloc(buff_size * sizeof(wchar_t))));
+-    retval = GetFinalPathNameByHandleW(h, buff.get(), buff_size, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+-  }
+-  if (!retval) {
+-    return nullptr;
+-  }
+-  wchar_t* ptr = buff.get();
+-  if (!wcsncmp(ptr, L"\\\\?\\", 4)) {
+-    if (ptr[5] == ':') { // \\?\X: -> X:
+-      memmove(&ptr[0], &ptr[4], (wcslen(&ptr[4]) + 1) * sizeof(wchar_t));
+-    } else if (!wcsncmp(&ptr[4], L"UNC\\", 4)) { // \\?\UNC\server -> \\server
+-      wcscpy(&ptr[0], L"\\\\");
+-      memmove(&ptr[2], &ptr[8], (wcslen(&ptr[8]) + 1) * sizeof(wchar_t));
+-    }
+-  }
+-  return buff.release();
++  return nullptr;
++
++  // // Only expected to be used with us allocating the buffer.
++  // _LIBCPP_ASSERT_INTERNAL(resolved_name == nullptr, "Windows realpath() assumes a null resolved_name");
++
++  // WinHandle h(path, FILE_READ_ATTRIBUTES, 0);
++  // if (!h) {
++  //   return nullptr;
++  // }
++  // size_t buff_size = MAX_PATH + 10;
++  // std::unique_ptr<wchar_t, decltype(&::free)> buff(static_cast<wchar_t*>(malloc(buff_size * sizeof(wchar_t))), &::free);
++  // DWORD retval = GetFinalPathNameByHandleW(h, buff.get(), buff_size, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
++  // if (retval > buff_size) {
++  //   buff_size = retval;
++  //   buff.reset(static_cast<wchar_t*>(malloc(buff_size * sizeof(wchar_t))));
++  //   retval = GetFinalPathNameByHandleW(h, buff.get(), buff_size, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
++  // }
++  // if (!retval) {
++  //   return nullptr;
++  // }
++  // wchar_t* ptr = buff.get();
++  // if (!wcsncmp(ptr, L"\\\\?\\", 4)) {
++  //   if (ptr[5] == ':') { // \\?\X: -> X:
++  //     memmove(&ptr[0], &ptr[4], (wcslen(&ptr[4]) + 1) * sizeof(wchar_t));
++  //   } else if (!wcsncmp(&ptr[4], L"UNC\\", 4)) { // \\?\UNC\server -> \\server
++  //     wcscpy(&ptr[0], L"\\\\");
++  //     memmove(&ptr[2], &ptr[8], (wcslen(&ptr[8]) + 1) * sizeof(wchar_t));
++  //   }
++  // }
++  // return buff.release();
+ }
+ 
+ #  define AT_FDCWD -1
+@@ -367,16 +374,17 @@ inline wchar_t* realpath(const wchar_t* path, [[maybe_unused]] wchar_t* resolved
+ using ModeT = int;
+ 
+ inline int fchmod_handle(HANDLE h, int perms) {
+-  FILE_BASIC_INFO basic;
+-  if (!GetFileInformationByHandleEx(h, FileBasicInfo, &basic, sizeof(basic)))
+-    return -1;
+-  DWORD orig_attributes = basic.FileAttributes;
+-  basic.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+-  if ((perms & 0222) == 0)
+-    basic.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+-  if (basic.FileAttributes != orig_attributes && !SetFileInformationByHandle(h, FileBasicInfo, &basic, sizeof(basic)))
+-    return -1;
+-  return 0;
++  return -1;
++  // FILE_BASIC_INFO basic;
++  // if (!GetFileInformationByHandleEx(h, FileBasicInfo, &basic, sizeof(basic)))
++  //   return -1;
++  // DWORD orig_attributes = basic.FileAttributes;
++  // basic.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
++  // if ((perms & 0222) == 0)
++  //   basic.FileAttributes |= FILE_ATTRIBUTE_READONLY;
++  // if (basic.FileAttributes != orig_attributes && !SetFileInformationByHandle(h, FileBasicInfo, &basic, sizeof(basic)))
++  //   return -1;
++  // return 0;
+ }
+ 
+ inline int fchmodat(int /*fd*/, const wchar_t* path, int perms, int flag) {
+diff --git a/libcxx/src/support/win32/support.cpp b/libcxx/src/support/win32/support.cpp
+index 7ac508301..3dc764aab 100644
+--- a/libcxx/src/support/win32/support.cpp
++++ b/libcxx/src/support/win32/support.cpp
+@@ -6,6 +6,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include <algorithm> // min
+ #include <cstdarg> // va_start, va_end
+ #include <cstddef> // size_t
+ #include <cstdio>  // vsprintf, vsnprintf
+@@ -101,6 +102,22 @@ size_t wcsnrtombs(char* __restrict dst,
+   if (!dst)
+     dest_remaining = static_cast<size_t>(-1);
+ 
++  // Windows XP shim
++  auto wcrtomb_s = [](size_t* __restrict pReturnValue,
++                      char* __restrict mbchar,
++                      size_t sizeOfmbchar,
++                      wchar_t wchar,
++                      mbstate_t* __restrict mbstate) {
++    char out[MB_CUR_MAX];
++    *pReturnValue = wcrtomb(out, wchar, mbstate);
++    if (*pReturnValue == static_cast<size_t>(-1))
++      return errno;
++
++    memcpy(mbchar, out, std::min(sizeOfmbchar, *pReturnValue));
++
++    return 0;
++  };
++
+   while (source_converted != max_source_chars) {
+     if (!dest_remaining)
+       break;
+diff --git a/libunwind/src/RWMutex.hpp b/libunwind/src/RWMutex.hpp
+index 344d35641..7e86565f7 100644
+--- a/libunwind/src/RWMutex.hpp
++++ b/libunwind/src/RWMutex.hpp
+@@ -13,7 +13,7 @@
+ #ifndef __RWMUTEX_HPP__
+ #define __RWMUTEX_HPP__
+ 
+-#if defined(_WIN32)
++#if defined(_WIN32) && !defined(_LIBUNWIND_HAS_THREAD_API_PTHREAD)
+ #include <windows.h>
+ #elif !defined(_LIBUNWIND_HAS_NO_THREADS)
+ #include <pthread.h>
+@@ -34,7 +34,7 @@ public:
+   bool unlock() { return true; }
+ };
+ 
+-#elif defined(_WIN32)
++#elif defined(_WIN32) && !defined(_LIBUNWIND_HAS_THREAD_API_PTHREAD)
+ 
+ class _LIBUNWIND_HIDDEN RWMutex {
+ public:
+diff --git a/lld/COFF/Config.h b/lld/COFF/Config.h
+index 91b6e632f..0e0d771ee 100644
+--- a/lld/COFF/Config.h
++++ b/lld/COFF/Config.h
+@@ -296,10 +296,10 @@ struct Configuration {
+   uint32_t minorImageVersion = 0;
+   // If changing the default os/subsys version here, update the default in
+   // the MinGW driver accordingly.
+-  uint32_t majorOSVersion = 6;
+-  uint32_t minorOSVersion = 0;
+-  uint32_t majorSubsystemVersion = 6;
+-  uint32_t minorSubsystemVersion = 0;
++  uint32_t majorOSVersion = 5;
++  uint32_t minorOSVersion = 1;
++  uint32_t majorSubsystemVersion = 5;
++  uint32_t minorSubsystemVersion = 1;
+   uint32_t timestamp = 0;
+   uint32_t functionPadMin = 0;
+   uint32_t timeTraceGranularity = 0;

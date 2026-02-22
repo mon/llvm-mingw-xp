@@ -122,6 +122,8 @@ if [ -n "$NATIVE" ]; then
     exit 0
 fi
 
+PTHREAD_INC="-isystem\"$(realpath ../../mingw-w64/mingw-w64-libraries/winpthreads/include)\""
+
 for arch in $ARCHS; do
     [ -z "$CLEAN" ] || rm -rf build-$arch$BUILD_SUFFIX
     mkdir -p build-$arch$BUILD_SUFFIX
@@ -148,8 +150,8 @@ for arch in $ARCHS; do
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
         -DSANITIZER_CXX_ABI=libc++ \
-        -DCMAKE_C_FLAGS_INIT="$CFGUARD_CFLAGS" \
-        -DCMAKE_CXX_FLAGS_INIT="$CFGUARD_CFLAGS" \
+        -DCMAKE_C_FLAGS_INIT="$CFGUARD_CFLAGS $PTHREAD_INC -D_COMPILER_RT_HAS_THREAD_API_PTHREAD" \
+        -DCMAKE_CXX_FLAGS_INIT="$CFGUARD_CFLAGS $PTHREAD_INC -D_COMPILER_RT_HAS_THREAD_API_PTHREAD" \
         $SRC_DIR
     cmake --build . ${CORES:+-j${CORES}}
 

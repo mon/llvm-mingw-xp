@@ -3,7 +3,49 @@ LLVM MinGW
 
 This is a recipe for reproducibly building a
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org/)/[LLD](https://lld.llvm.org/)
-based mingw-w64 toolchain.
+based mingw-w64 toolchain, modified to produce binaries for Windows XP.
+
+It's based off LLVM 21.1.8 and I'll update it as I feel the need.
+
+Testing has been sparse, but it should support all the goodies such as
+- C++23 (and whatever of C++26 clang supports)
+- `std::mutex` and other syncronisation primitives
+- Threadsafe static initialisation
+- std::filesystem (with some caveats, see below)
+- RTTI
+- Exceptions
+
+What this is not
+----------------
+
+This does not shim Windows XP functionality so all existing software "just builds".
+It merely ensures that the compiler and stdlib avoid most instances of >=Vista functionality.
+If you want shims, you might want to look at something like [YY-Thunks](https://github.com/Chuyu-Team/YY-Thunks).
+
+Notes
+-----
+
+Run `./xp.sh` to build the toolchain.
+
+When building using the created toolchain, you will probably need to add 
+`-lpthread` to your linker flags, as any synchronisation will use its routines.
+
+On i686, you will also likely need `-lpsapi`.
+
+Things that use iostreams _may_ have performance issues; as locale-aware functions
+have been emulated by swapping locale, calling the non-aware function, then swapping
+back.
+
+`std::filesystem` doesn't support symlink creation, `realpath`, or `chmod`.
+
+Future work
+-----------
+- publishing a docker image, because the half hour build is quite a lot
+- fixing the linking so pthreads/psapi don't need to be specified manually
+- linking against ntdll for the missing `std::filesystem` features
+
+Original readme
+----------------
 
 Benefits of a LLVM based MinGW toolchain are:
 - Support for targeting ARM/ARM64 (while GCC obviously does support

@@ -72,6 +72,8 @@ else
     esac
 fi
 
+PTHREAD_INC="-isystem\"$(realpath ../../mingw-w64/mingw-w64-libraries/winpthreads/include)\""
+
 for arch in $ARCHS; do
     [ -z "$CLEAN" ] || rm -rf build-$arch
     mkdir -p build-$arch
@@ -93,7 +95,9 @@ for arch in $ARCHS; do
         -DLIBUNWIND_USE_COMPILER_RT=TRUE \
         -DLIBUNWIND_ENABLE_SHARED=$BUILD_SHARED \
         -DLIBUNWIND_ENABLE_STATIC=$BUILD_STATIC \
+        -DLIBUNWIND_ADDITIONAL_LIBRARIES=psapi \
         -DLIBCXX_USE_COMPILER_RT=ON \
+        -DLIBCXX_HAS_PTHREAD_API=ON \
         -DLIBCXX_ENABLE_SHARED=$BUILD_SHARED \
         -DLIBCXX_ENABLE_STATIC=$BUILD_STATIC \
         -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=TRUE \
@@ -107,8 +111,8 @@ for arch in $ARCHS; do
         -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
         -DLIBCXXABI_ENABLE_SHARED=OFF \
         -DLIBCXXABI_LIBDIR_SUFFIX="" \
-        -DCMAKE_C_FLAGS_INIT="$CFGUARD_CFLAGS" \
-        -DCMAKE_CXX_FLAGS_INIT="$CFGUARD_CFLAGS" \
+        -DCMAKE_C_FLAGS_INIT="$CFGUARD_CFLAGS $PTHREAD_INC" \
+        -DCMAKE_CXX_FLAGS_INIT="$CFGUARD_CFLAGS $PTHREAD_INC -D_LIBUNWIND_HAS_THREAD_API_PTHREAD" \
         ..
 
     cmake --build . ${CORES:+-j${CORES}}

@@ -235,7 +235,7 @@ if [ -n "$CLEAN_RUNTIMES" ]; then
 fi
 ./build-mingw-w64.sh $PREFIX $MINGW_ARGS $CFGUARD_ARGS
 ./build-compiler-rt.sh $PREFIX $CFGUARD_ARGS
-./build-libcxx.sh $PREFIX $CFGUARD_ARGS
 ./build-mingw-w64-libraries.sh $PREFIX $CFGUARD_ARGS
+./build-libcxx.sh $PREFIX $CFGUARD_ARGS
 ./build-compiler-rt.sh $PREFIX --build-sanitizers # CFGUARD_ARGS intentionally omitted
-./build-openmp.sh $PREFIX $CFGUARD_ARGS
+# ./build-openmp.sh $PREFIX $CFGUARD_ARGS

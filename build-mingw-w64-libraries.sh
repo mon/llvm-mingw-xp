@@ -16,15 +16,15 @@
 
 set -e
 
-USE_CFLAGS="-g -O2 -mguard=cf"
+USE_CFLAGS="-g -O2 -mguard=cf --unwindlib=none"
 
 while [ $# -gt 0 ]; do
     case "$1" in
     --enable-cfguard)
-        USE_CFLAGS="-g -O2 -mguard=cf"
+        USE_CFLAGS="-g -O2 -mguard=cf --unwindlib=none"
         ;;
     --disable-cfguard)
-        USE_CFLAGS="-g -O2"
+        USE_CFLAGS="-g -O2 --unwindlib=none"
         ;;
     *)
         PREFIX="$1"
@@ -56,7 +56,7 @@ if command -v gmake >/dev/null; then
 fi
 
 cd mingw-w64/mingw-w64-libraries
-for lib in winpthreads winstorecompat; do
+for lib in winpthreads; do
     cd $lib
     for arch in $ARCHS; do
         [ -z "$CLEAN" ] || rm -rf build-$arch
