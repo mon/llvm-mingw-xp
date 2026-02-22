@@ -449,3 +449,16 @@ index 91b6e632f..0e0d771ee 100644
    uint32_t timestamp = 0;
    uint32_t functionPadMin = 0;
    uint32_t timeTraceGranularity = 0;
+diff --git a/llvm/lib/Object/COFFModuleDefinition.cpp b/llvm/lib/Object/COFFModuleDefinition.cpp
+index 67b0dc4fa..f722191da 100644
+--- a/llvm/lib/Object/COFFModuleDefinition.cpp
++++ b/llvm/lib/Object/COFFModuleDefinition.cpp
+@@ -164,7 +164,7 @@ private:
+ 
+   Error readAsInt(uint64_t *I) {
+     read();
+-    if (Tok.K != Identifier || Tok.Value.getAsInteger(10, *I))
++    if (Tok.K != Identifier || Tok.Value.getAsInteger(0, *I))
+       return createError("integer expected");
+     return Error::success();
+   }
