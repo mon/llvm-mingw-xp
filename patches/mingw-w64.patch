@@ -1,0 +1,13 @@
+diff --git a/mingw-w64-headers/include/sdkddkver.h b/mingw-w64-headers/include/sdkddkver.h
+index ee1ef33e2..7338b44ea 100644
+--- a/mingw-w64-headers/include/sdkddkver.h
++++ b/mingw-w64-headers/include/sdkddkver.h
+@@ -184,7 +184,7 @@
+ #   define NTDDI_VERSION WDK_NTDDI_VERSION
+ #  endif
+ # else
+-#  define NTDDI_VERSION NTDDI_WS03
++#  define NTDDI_VERSION NTDDI_WINXP
+ # endif
+ #endif
+ 
