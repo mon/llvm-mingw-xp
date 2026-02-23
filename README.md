@@ -14,6 +14,7 @@ Testing has been sparse, but it should support all the goodies such as
 - std::filesystem (with some caveats, see below)
 - RTTI
 - Exceptions
+- Thread-local-storage (ensure you add `-femulated-tls` to your compile flags)
 
 What this is not
 ----------------
@@ -31,6 +32,8 @@ When building using the created toolchain, you will probably need to add
 `-lpthread` to your linker flags, as any synchronisation will use its routines.
 
 On i686, you will also likely need `-lpsapi`.
+
+If using thread local storage, you MUST add `-femulated-tls` to your compile/link flags.
 
 Things that use iostreams _may_ have performance issues; as locale-aware functions
 have been emulated by swapping locale, calling the non-aware function, then swapping
