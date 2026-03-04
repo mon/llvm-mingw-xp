@@ -14,7 +14,7 @@ Testing has been sparse, but it should support all the goodies such as
 - std::filesystem (with some caveats, see below)
 - RTTI
 - Exceptions
-- Thread-local-storage (ensure you add `-femulated-tls` to your compile flags)
+- Thread-local-storage (`-femulated-tls` flag is default-on as native support is Vista+)
 
 What this is not
 ----------------
@@ -28,13 +28,6 @@ Notes
 
 Run `./xp.sh` to build the toolchain.
 
-When building using the created toolchain, you will probably need to add 
-`-lpthread` to your linker flags, as any synchronisation will use its routines.
-
-On i686, you will also likely need `-lpsapi`.
-
-If using thread local storage, you MUST add `-femulated-tls` to your compile/link flags.
-
 Things that use iostreams _may_ have performance issues; as locale-aware functions
 have been emulated by swapping locale, calling the non-aware function, then swapping
 back.
@@ -44,7 +37,6 @@ back.
 Future work
 -----------
 - publishing a docker image, because the half hour build is quite a lot
-- fixing the linking so pthreads/psapi don't need to be specified manually
 - linking against ntdll for the missing `std::filesystem` features
 
 Original readme

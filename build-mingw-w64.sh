@@ -148,6 +148,11 @@ for arch in $ARCHS; do
         llvm-ar rcs $PREFIX/$arch-w64-mingw32/lib/libssp.a
         llvm-ar rcs $PREFIX/$arch-w64-mingw32/lib/libssp_nonshared.a
     fi
+    if [ ! -f $PREFIX/$arch-w64-mingw32/lib/libpthread.a ]; then
+        # Create empty dummy archive, to avoid failing when the compiler
+        # driver unconditionally adds "-lpthread" before winpthreads is built.
+        llvm-ar rcs $PREFIX/$arch-w64-mingw32/lib/libpthread.a
+    fi
 
     mkdir -p "$PREFIX/$arch-w64-mingw32/share/mingw32"
     for file in COPYING COPYING.MinGW-w64/COPYING.MinGW-w64.txt COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt; do
