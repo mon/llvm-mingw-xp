@@ -42,7 +42,6 @@ populate_gitignores
 ./build-all.sh $PREFIX \
     --with-default-win32-winnt=0x0501 \
     --with-default-msvcrt=msvcrt \
-    --disable-lldb \
     --disable-dylib \
     --disable-cfguard
 
