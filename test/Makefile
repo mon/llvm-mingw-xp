@@ -74,7 +74,7 @@ TESTS_C_LINK_DLL = autoimport-main
 TESTS_C_NO_BUILTIN = crt-test
 TESTS_C_ANSI_STDIO = crt-test
 TESTS_C_AS_CPP = crt-test
-TESTS_CPP = hello-cpp global-terminate tlstest-main longjmp-cleanup
+TESTS_CPP = hello-cpp global-terminate tlstest-main longjmp-cleanup atomic-load-sizes
 TESTS_CPP_EXCEPTIONS = hello-exception exception-locale exception-reduced exception-catch-ptr-ref
 TESTS_CPP_STATIC = hello-exception
 TESTS_CPP_DLL = tlstest-lib throwcatch-lib
@@ -101,7 +101,7 @@ ifneq ($(HAVE_CFGUARD),)
     TESTS_CFGUARD = cfguard-test
     TESTS_ASAN_CFGUARD = $(TESTS_ASAN)
 endif
-TESTS_ATOMIC = atomic-helpers
+TESTS_ATOMIC = atomic-helpers atomic-load-store
 
 TARGETS_C = $(addsuffix $(EXEEXT), $(TESTS_C))
 TARGETS_C_DLL = $(addsuffix $(DLLEXT), $(TESTS_C_DLL))
