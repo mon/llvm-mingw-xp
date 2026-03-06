@@ -9,7 +9,7 @@ It's based off LLVM 21.1.8 and I'll update it as I feel the need.
 
 Testing has been sparse, but it should support all the goodies such as
 - C++23 (and whatever of C++26 clang supports)
-- `std::mutex` and other syncronisation primitives
+- `std::mutex` and other synchronisation primitives
 - Threadsafe static initialisation
 - std::filesystem (with some caveats, see below)
 - RTTI
@@ -22,6 +22,12 @@ What this is not
 This does not shim Windows XP functionality so all existing software "just builds".
 It merely ensures that the compiler and stdlib avoid most instances of >=Vista functionality.
 If you want shims, you might want to look at something like [YY-Thunks](https://github.com/Chuyu-Team/YY-Thunks).
+
+Docker image
+------------
+
+There is a [docker image available](https://hub.docker.com/r/montymintypie/llvm-mingw-xp).
+As an example of using this in a real project, check out [ifs_layeredfs](https://github.com/mon/ifs_layeredfs/blob/master/build_docker.sh).
 
 Notes
 -----
@@ -36,7 +42,6 @@ back.
 
 Future work
 -----------
-- publishing a docker image, because the half hour build is quite a lot
 - linking against ntdll for the missing `std::filesystem` features
 
 Original readme
