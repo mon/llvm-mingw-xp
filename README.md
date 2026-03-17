@@ -5,7 +5,7 @@ This is a recipe for reproducibly building a
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org/)/[LLD](https://lld.llvm.org/)
 based mingw-w64 toolchain, modified to produce binaries for Windows XP.
 
-It's based off LLVM 21.1.8 and I'll update it as I feel the need.
+It's based off LLVM 22.1.0 and I'll update it as I can be bothered.
 
 Testing has been sparse, but it should support all the goodies such as
 - C++23 (and whatever of C++26 clang supports)
@@ -27,6 +27,17 @@ Docker image
 ------------
 
 There is a [docker image available](https://hub.docker.com/r/montymintypie/llvm-mingw-xp).
+
+It has toolchain files for both meson and cmake, they live at:
+- `/opt/llvm-mingw/toolchain-files/meson/i686-mingw32-clang.ini`
+- `/opt/llvm-mingw/toolchain-files/meson/x86_64-mingw32-clang.ini`
+- `/opt/llvm-mingw/toolchain-files/cmake/i686-mingw32-clang.cmake`
+- `/opt/llvm-mingw/toolchain-files/cmake/x86_64-mingw32-clang.cmake`
+
+They can be activated with the usual cross-compile options in their respective programs:
+- `cmake -DCMAKE_TOOLCHAIN_FILE=...`
+- `meson setup --cross-file ...`
+
 As an example of using this in a real project, check out [ifs_layeredfs](https://github.com/mon/ifs_layeredfs/blob/master/build_docker.sh).
 
 Notes

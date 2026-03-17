@@ -15,21 +15,18 @@ RUN git config --global user.name "LLVM MinGW" && \
 WORKDIR /build
 
 ENV TOOLCHAIN_PREFIX=/opt/llvm-mingw
-ENV LLVM_VERSION=llvmorg-21.1.8
-ENV MINGW_W64_VERSION=v13.0.0
 ENV TOOLCHAIN_ARCHS="i686 x86_64"
 ENV TOOLCHAIN_TARGET_OSES=mingw32
 
 COPY build-all.sh build-llvm.sh strip-llvm.sh install-wrappers.sh \
      build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh \
-     build-libcxx.sh build-mingw-w64-libraries.sh ./
+     build-libcxx.sh build-lldb-mi.sh build-mingw-w64-libraries.sh ./
 COPY wrappers/*.sh wrappers/*.c wrappers/*.h wrappers/*.cfg ./wrappers/
 COPY patches/*.patch ./patches/
 
 RUN ./build-all.sh $TOOLCHAIN_PREFIX \
     --with-default-win32-winnt=0x0501 \
     --with-default-msvcrt=msvcrt \
-    --disable-lldb \
     --disable-dylib \
     --disable-cfguard && \
     rm -rf /build/*

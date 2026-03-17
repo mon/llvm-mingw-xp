@@ -5,9 +5,6 @@ set -eu
 PREFIX=build
 mkdir -p "$PREFIX"
 
-export LLVM_VERSION=llvmorg-21.1.8
-export MINGW_W64_VERSION=v13.0.0
-
 export TOOLCHAIN_ARCHS="i686 x86_64"
 # don't build the UWP platform, useless on XP
 export TOOLCHAIN_TARGET_OSES=mingw32
