@@ -1,0 +1,8 @@
+export CC=i686-w64-mingw32-clang
+export CXX=i686-w64-mingw32-clang++
+export AR=i686-w64-mingw32-ar
+export RANLIB=i686-w64-mingw32-ranlib
+export STRIP=i686-w64-mingw32-strip
+export WINDRES=i686-w64-mingw32-windres
+export DLLTOOL=i686-w64-mingw32-dlltool
+export RC=i686-w64-mingw32-windres

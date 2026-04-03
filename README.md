@@ -28,13 +28,16 @@ Docker image
 
 There is a [docker image available](https://hub.docker.com/r/montymintypie/llvm-mingw-xp).
 
-It has toolchain files for both meson and cmake, they live at:
+It has toolchain files for make, meson and cmake, they live at:
+- `/opt/llvm-mingw/toolchain-files/make/i686-mingw32-clang`
+- `/opt/llvm-mingw/toolchain-files/make/x86_64-mingw32-clang`
 - `/opt/llvm-mingw/toolchain-files/meson/i686-mingw32-clang.ini`
 - `/opt/llvm-mingw/toolchain-files/meson/x86_64-mingw32-clang.ini`
 - `/opt/llvm-mingw/toolchain-files/cmake/i686-mingw32-clang.cmake`
 - `/opt/llvm-mingw/toolchain-files/cmake/x86_64-mingw32-clang.cmake`
 
 They can be activated with the usual cross-compile options in their respective programs:
+- `source ...`
 - `cmake -DCMAKE_TOOLCHAIN_FILE=...`
 - `meson setup --cross-file ...`
 
