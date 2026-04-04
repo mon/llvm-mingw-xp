@@ -1,0 +1,211 @@
+name: XP Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. llvm-mingw-xp-22.1.0)'
+        required: true
+      title:
+        description: 'Release title (defaults to tag)'
+      prerelease:
+        type: boolean
+        default: false
+      create_release:
+        description: 'Set false to re-upload assets to an existing tag'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux-x86_64:
+    runs-on: ubuntu-22.04
+    env:
+      # NOTE: aarch64 specified here because llvm uses itself to build other
+      # targets, which for arm64 Windows builds means it needs this
+      TOOLCHAIN_ARCHS: i686 x86_64 aarch64
+      TOOLCHAIN_TARGET_OSES: mingw32
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build XP cross-compiler
+        run: |
+          LLVM_CMAKEFLAGS="-DLLVM_ENABLE_LIBXML2=OFF -DLLDB_ENABLE_PYTHON=OFF" \
+            ./build-all.sh $(pwd)/install/llvm-mingw \
+            --with-default-win32-winnt=0x0501 \
+            --with-default-msvcrt=msvcrt \
+            --disable-dylib \
+            --disable-cfguard
+      - name: Package
+        run: |
+          DISTRO=ubuntu-$(grep DISTRIB_RELEASE /etc/lsb-release | cut -f 2 -d =)-$(uname -m)
+          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-$DISTRO
+          cd install
+          mv llvm-mingw $NAME
+          tar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux-x86_64-toolchain
+          path: '*.tar.xz'
+
+  build-linux-arm64:
+    needs: build-linux-x86_64
+    runs-on: ubuntu-22.04
+    env:
+      TOOLCHAIN_ARCHS: i686 x86_64
+      TOOLCHAIN_TARGET_OSES: mingw32
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-x86_64-toolchain
+      - name: Unpack stage1 toolchain
+        run: |
+          tar -Jxf llvm-mingw-*.tar.xz
+          rm llvm-mingw-*.tar.xz
+          sudo mv llvm-mingw* /opt/llvm-mingw
+          echo /opt/llvm-mingw/bin >> $GITHUB_PATH
+      - name: Build ARM64 Linux cross-compiler
+        run: |
+          sudo apt-get update && sudo apt-get install -y g++-aarch64-linux-gnu
+          ./build-all.sh $(pwd)/install/llvm-mingw \
+            --no-runtimes --host=aarch64-linux-gnu
+      - name: Assemble cross-built toolchain
+        run: |
+          ./prepare-cross-toolchain-unix.sh /opt/llvm-mingw $(pwd)/install/llvm-mingw
+      - name: Package
+        run: |
+          DISTRO=ubuntu-$(grep DISTRIB_RELEASE /etc/lsb-release | cut -f 2 -d =)-aarch64
+          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-$DISTRO
+          cd install
+          mv llvm-mingw $NAME
+          tar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux-arm64-toolchain
+          path: '*.tar.xz'
+
+  build-macos:
+    runs-on: macos-14
+    env:
+      TOOLCHAIN_ARCHS: i686 x86_64
+      TOOLCHAIN_TARGET_OSES: mingw32
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build macOS universal cross-compiler
+        run: |
+          MACOS_REDIST=1 LLVM_CMAKEFLAGS="-DLLVM_ENABLE_ZSTD=OFF -DLLDB_ENABLE_PYTHON=OFF" \
+            ./build-all.sh $(pwd)/install/llvm-mingw \
+            --with-default-win32-winnt=0x0501 \
+            --with-default-msvcrt=msvcrt \
+            --disable-dylib \
+            --disable-cfguard
+      - name: Package
+        run: |
+          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-macos-universal
+          cd install
+          mv llvm-mingw $NAME
+          gtar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
+      - uses: actions/upload-artifact@v6
+        with:
+          name: macos-toolchain
+          path: '*.tar.xz'
+
+  build-windows-x86_64:
+    needs: build-linux-x86_64
+    runs-on: ubuntu-latest
+    env:
+      TOOLCHAIN_ARCHS: i686 x86_64
+      TOOLCHAIN_TARGET_OSES: mingw32
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-x86_64-toolchain
+      - name: Unpack cross toolchain
+        run: |
+          tar -Jxf llvm-mingw-*.tar.xz
+          rm llvm-mingw-*.tar.xz
+          sudo mv llvm-mingw* /opt/llvm-mingw
+          echo /opt/llvm-mingw/bin >> $GITHUB_PATH
+      - name: Build Windows x86_64 native toolchain
+        run: |
+          sudo apt-get update && sudo apt-get install -y libltdl-dev swig autoconf-archive
+          ./build-cross-tools.sh /opt/llvm-mingw $(pwd)/install/llvm-mingw \
+            x86_64 --with-python --with-busybox
+      - name: Package
+        run: |
+          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-x86_64
+          cd install
+          mv llvm-mingw $NAME
+          zip -9rq ../$NAME.zip $NAME
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows-x86_64-toolchain
+          path: '*.zip'
+
+  build-windows-aarch64:
+    needs: build-linux-x86_64
+    runs-on: ubuntu-latest
+    env:
+      TOOLCHAIN_ARCHS: i686 x86_64
+      TOOLCHAIN_TARGET_OSES: mingw32
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-x86_64-toolchain
+      - name: Unpack cross toolchain
+        run: |
+          tar -Jxf llvm-mingw-*.tar.xz
+          rm llvm-mingw-*.tar.xz
+          sudo mv llvm-mingw* /opt/llvm-mingw
+          echo /opt/llvm-mingw/bin >> $GITHUB_PATH
+      - name: Build Windows aarch64 native toolchain
+        run: |
+          sudo apt-get update && sudo apt-get install -y libltdl-dev swig autoconf-archive
+          ./build-cross-tools.sh /opt/llvm-mingw $(pwd)/install/llvm-mingw \
+            aarch64 --with-python --with-busybox
+      - name: Package
+        run: |
+          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-aarch64
+          cd install
+          mv llvm-mingw $NAME
+          zip -9rq ../$NAME.zip $NAME
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows-aarch64-toolchain
+          path: '*.zip'
+
+  release:
+    needs:
+      - build-linux-x86_64
+      - build-linux-arm64
+      - build-macos
+      - build-windows-x86_64
+      - build-windows-aarch64
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+      - name: Collect artifacts
+        run: mv *-toolchain/*.tar.xz *-toolchain/*.zip .
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""
+          if ${{ inputs.prerelease }}; then PRERELEASE="--prerelease"; fi
+          TITLE="${{ inputs.title || inputs.tag }}"
+          if ${{ inputs.create_release }}; then
+            gh release create ${{ inputs.tag }} $PRERELEASE \
+              --title "$TITLE" --notes "" \
+              *.tar.xz *.zip \
+              -R ${{ github.repository }}
+          else
+            gh release upload ${{ inputs.tag }} \
+              *.tar.xz *.zip --clobber \
+              -R ${{ github.repository }}
+          fi
