@@ -24,6 +24,8 @@ populate_gitignores () {
             "llvm-project/runtimes/build-$arch"
             "llvm-project/openmp/build-$arch"
             "mingw-w64/mingw-w64-crt/build-$arch"
+            "busybox-w32/build-$arch-w64-mingw32"
+            "cpython-mingw/build-$arch-w64-mingw32"
         )
     done
     for folder in "${ignores[@]}"; do
