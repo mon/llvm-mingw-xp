@@ -42,7 +42,7 @@ jobs:
       - name: Package
         run: |
           DISTRO=ubuntu-$(grep DISTRIB_RELEASE /etc/lsb-release | cut -f 2 -d =)-$(uname -m)
-          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-$DISTRO
+          NAME=${{ inputs.tag }}-msvcrt-$DISTRO
           cd install
           mv llvm-mingw $NAME
           tar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
@@ -81,7 +81,7 @@ jobs:
       - name: Package
         run: |
           DISTRO=ubuntu-$(grep DISTRIB_RELEASE /etc/lsb-release | cut -f 2 -d =)-aarch64
-          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-$DISTRO
+          NAME=${{ inputs.tag }}-msvcrt-$DISTRO
           cd install
           mv llvm-mingw $NAME
           tar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
@@ -109,7 +109,7 @@ jobs:
         run: cp -r toolchain-files install/llvm-mingw/
       - name: Package
         run: |
-          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-macos-universal
+          NAME=${{ inputs.tag }}-msvcrt-macos-universal
           cd install
           mv llvm-mingw $NAME
           gtar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name $NAME
@@ -144,7 +144,7 @@ jobs:
         run: cp -r toolchain-files install/llvm-mingw/
       - name: Package
         run: |
-          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-x86_64
+          NAME=${{ inputs.tag }}-msvcrt-x86_64
           cd install
           mv llvm-mingw $NAME
           zip -9rq ../$NAME.zip $NAME
@@ -179,7 +179,7 @@ jobs:
         run: cp -r toolchain-files install/llvm-mingw/
       - name: Package
         run: |
-          NAME=llvm-mingw-${{ inputs.tag }}-msvcrt-aarch64
+          NAME=${{ inputs.tag }}-msvcrt-aarch64
           cd install
           mv llvm-mingw $NAME
           zip -9rq ../$NAME.zip $NAME
