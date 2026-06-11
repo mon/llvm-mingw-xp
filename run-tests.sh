@@ -209,7 +209,7 @@ fi
 for arch in $ARCHS; do
     unset HAVE_ASAN
     HAVE_UBSAN=1
-    HAVE_OPENMP=1
+    HAVE_OPENMP=
     case $arch in
     i686)
         RUN="$RUN_I686"

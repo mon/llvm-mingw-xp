@@ -6,3 +6,6 @@
 /cpython*
 /python-native
 /toolchain
+
+/test/*i686
+/test/*x86_64
