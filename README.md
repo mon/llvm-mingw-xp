@@ -5,7 +5,7 @@ This is a recipe for reproducibly building a
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org/)/[LLD](https://lld.llvm.org/)
 based mingw-w64 toolchain, modified to produce binaries for Windows XP.
 
-It's based off LLVM 22.1.0 and I'll update it as I can be bothered.
+It's based off LLVM 22.1.7 and I'll update it as I can be bothered.
 
 Testing has been sparse, but it should support all the goodies such as
 - C++23 (and whatever of C++26 clang supports)
