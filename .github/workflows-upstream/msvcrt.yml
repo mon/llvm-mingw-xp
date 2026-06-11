@@ -27,7 +27,7 @@ jobs:
       BUILD_DATE_UNIX: ${{steps.get-parameters.outputs.BUILD_DATE_UNIX}}
     steps:
       - name: Download build parameters
-        uses: dawidd6/action-download-artifact@v10
+        uses: dawidd6/action-download-artifact@v19
         with:
           workflow: build.yml
           workflow_conclusion: success
@@ -45,11 +45,11 @@ jobs:
     needs: [prepare]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event_name == 'workflow_dispatch' && inputs.ref || 'master'}}
       - name: Download toolchain
-        uses: dawidd6/action-download-artifact@v10
+        uses: dawidd6/action-download-artifact@v19
         with:
           workflow: build.yml
           workflow_conclusion: success
@@ -77,7 +77,7 @@ jobs:
           NAME=llvm-mingw-$TAG-msvcrt-$DISTRO
           mv llvm-mingw $NAME
           tar -Jcf ../$NAME.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name --mtime="$BUILD_DATE" $NAME
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: linux-msvcrt-x86_64-toolchain
           path: |
@@ -94,7 +94,7 @@ jobs:
           - { arch: i686, crt: msvcrt }
           - { arch: x86_64, crt: msvcrt }
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux-${{matrix.crt}}-x86_64-toolchain
       - name: Unpack cross toolchain
@@ -103,11 +103,11 @@ jobs:
           rm llvm-mingw-*.tar.xz
           sudo mv llvm-mingw* /opt/llvm-mingw
           echo /opt/llvm-mingw/bin >> $GITHUB_PATH
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event_name == 'workflow_dispatch' && inputs.ref || 'master'}}
       - name: Download profile
-        uses: dawidd6/action-download-artifact@v10
+        uses: dawidd6/action-download-artifact@v19
         with:
           workflow: build.yml
           workflow_conclusion: success
@@ -116,7 +116,7 @@ jobs:
           name: profile
       - name: Cache downloads
         id: cache-tarballs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /opt/cache
           key: tarballs-${{ hashFiles('build-make.sh') }}
@@ -147,7 +147,7 @@ jobs:
           for i in make-*.tar.*; do
               if [ ! -L $i ]; then cp -a $i /opt/cache; fi
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: windows-${{matrix.crt}}-${{matrix.arch}}-toolchain
           path: |
@@ -175,7 +175,7 @@ jobs:
           install: >-
             unzip
             make
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows-${{matrix.crt}}-${{matrix.arch}}-toolchain
       - name: Unpack toolchain
@@ -184,7 +184,7 @@ jobs:
           rm llvm-mingw-*.zip
           mv llvm-mingw-* /llvm-mingw
           echo /llvm-mingw/bin >> $GITHUB_PATH
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event_name == 'workflow_dispatch' && inputs.ref || 'master'}}
       - name: Run tests
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       - name: Rearrange files
         run: |
           rm -rf linux-asserts*
