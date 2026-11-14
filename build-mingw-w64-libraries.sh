@@ -69,7 +69,8 @@ for lib in winpthreads; do
     for arch in $ARCHS; do
         case $arch in
         aarch64)
-            FLAGS="$ARM64X_FLAGS"
+            # winpthreads assumes Win8+ on ARM
+            FLAGS="$ARM64X_FLAGS -D_WIN32_WINNT=0x0602"
             ;;
         arm64ec)
             continue

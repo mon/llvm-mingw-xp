@@ -5,7 +5,7 @@ set -eu
 PREFIX=build
 mkdir -p "$PREFIX"
 
-export TOOLCHAIN_ARCHS="i686 x86_64"
+export TOOLCHAIN_ARCHS="i686 x86_64 aarch64"
 # don't build the UWP platform, useless on XP
 export TOOLCHAIN_TARGET_OSES=mingw32
 
