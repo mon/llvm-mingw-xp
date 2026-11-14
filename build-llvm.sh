@@ -16,8 +16,8 @@
 
 set -e
 
-: ${LLVM_REPOSITORY:=https://github.com/llvm/llvm-project.git}
-: ${LLVM_VERSION:=llvmorg-22.1.7}
+: ${LLVM_REPOSITORY:=https://github.com/mon/llvm-project.git}
+: ${LLVM_VERSION:=llvmorg-22.1.7-xp}
 ASSERTS=OFF
 unset HOST
 BUILDDIR="build"
@@ -153,7 +153,6 @@ if [ -n "$SYNC" ] || [ -n "$CHECKOUT" ]; then
             ;;
         esac
     fi
-    git apply ../patches/llvm-project.patch
     cd ..
 fi
 
