@@ -91,7 +91,7 @@ jobs:
           path: '*.tar.xz'
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       TOOLCHAIN_ARCHS: i686 x86_64
       TOOLCHAIN_TARGET_OSES: mingw32

@@ -5,7 +5,7 @@ This is a recipe for reproducibly building a
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org/)/[LLD](https://lld.llvm.org/)
 based mingw-w64 toolchain, modified to produce binaries for Windows XP.
 
-It's based off LLVM 22.1.7 and I'll update it as I can be bothered.
+It's based off LLVM 23.1.5 and I'll update it as I can be bothered.
 
 Testing has been sparse, but it should support all the goodies such as
 - C++23 (and whatever of C++26 clang supports)
@@ -52,7 +52,12 @@ Things that use iostreams _may_ have performance issues; as locale-aware functio
 have been emulated by swapping locale, calling the non-aware function, then swapping
 back.
 
+Things that use locales explicitly at all probably crash, as we fall back to
+a stub implementation for creating locales that returns a nullptr pre-win7.
+
 `std::filesystem` doesn't support symlink creation, `realpath`, or `chmod`.
+
+`std::text_encoding` from C++26 is not supported (using it will bring in Vista APIs).
 
 Future work
 -----------

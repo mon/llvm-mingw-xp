@@ -1,3 +1,16 @@
+diff --git a/mingw-w64-headers/crt/locale.h b/mingw-w64-headers/crt/locale.h
+index c7a6d3077..9a0e8e359 100644
+--- a/mingw-w64-headers/crt/locale.h
++++ b/mingw-w64-headers/crt/locale.h
+@@ -112,7 +112,7 @@ _CRTIMP int __cdecl _configthreadlocale(int _Flag);
+  *   Windows 8. We expose them for Vista and later in order to avoid breaking
+  *   packages which use them unconditionally (e.g. libc++).
+  */
+-#if __MSVCRT_VERSION__ >= 0x0800 || (__MSVCRT_VERSION__ == 0x0600 && _WIN32_WINNT >= 0x0600)
++#if __MSVCRT_VERSION__ >= 0x0800 || (__MSVCRT_VERSION__ == 0x0600 && _WIN32_WINNT >= 0x0500)
+ _CRTIMP _locale_t __cdecl _get_current_locale(void);
+ _CRTIMP _locale_t __cdecl _create_locale(int _Category,const char *_Locale);
+ _CRTIMP void __cdecl _free_locale(_locale_t _Locale);
 diff --git a/mingw-w64-headers/include/sdkddkver.h b/mingw-w64-headers/include/sdkddkver.h
 index ee1ef33e2..7338b44ea 100644
 --- a/mingw-w64-headers/include/sdkddkver.h
