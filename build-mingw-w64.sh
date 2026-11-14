@@ -64,6 +64,8 @@ cd mingw-w64
 
 if [ -n "$SYNC" ] || [ -n "$CHECKOUT" ]; then
     [ -z "$SYNC" ] || git fetch
+    # hack: SYNC=1 does a checkout a couple of times, don't die on the second patch
+    git checkout -- mingw-w64-headers/include/sdkddkver.h
     git checkout $MINGW_W64_VERSION
     git apply ../patches/mingw-w64.patch
 fi
